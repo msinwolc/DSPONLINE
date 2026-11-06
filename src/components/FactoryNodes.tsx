@@ -1115,7 +1115,7 @@ function LogisticsFullNode({ data, selected }: NodeProps<FactoryFlowNode>) {
         </div>
       ) : configuredItems.length > 0 ? (
         <div className={`node-io logistics-io${orbitalCollector ? " logistics-io--collector" : ""}`}>
-          {configuredItems.map((configuredItemId, index) => <div className={`logistics-slot-row${warehouseStorage ? " logistics-slot-row--warehouse" : ""}`} key={configuredItemId}>
+          {configuredItems.map((configuredItemId, index) => <div className={`logistics-slot-row${warehouseStorage ? " logistics-slot-row--warehouse" : ""}${trayExtractor ? " logistics-slot-row--tray-extractor" : ""}`} key={configuredItemId}>
             {!orbitalCollector && !trayExtractor ? <div className="node-io__column">
               {index === 0 ? <span className="node-io__label">输入</span> : null}
               <InputSlot entityId={entity.id} itemId={configuredItemId} amount={entity.inputs[configuredItemId] ?? 0} cargo={cargo} onDropCargo={data.onDropCargo} onPickInput={data.onPickInput} onDropDraggedItem={data.onDropDraggedItem} connectionDraft={data.connectionDraft} connectionCount={data.inputBeltCounts[configuredItemId] ?? 0} readOnly={data.readOnly} inventoryPickupEnabled={data.inventoryPickupEnabled} connectionsEnabled={ordinaryBeltHandlesEnabled(data)} />
