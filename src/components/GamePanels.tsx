@@ -1842,8 +1842,8 @@ function EntityInspector({
           <div><span>{entity.kind === "splitter" ? "物流分配设施" : "物流缓存设施"}</span><strong>{building.name} ×{entity.machineCount}</strong></div>
         </div>
         <div className="recipe-select" data-inspector-section="recipe" data-inspector-section-label="配方与主要模式" aria-label="配方与主要模式">
-          <span>缓存物品</span>
-          <ItemCatalogPicker value={itemId} items={acceptedItems} label="选择缓存物品" onChange={(nextItemId) => { if (nextItemId) onLogisticsItemChange(entity.id, nextItemId); }} />
+          <span>{entity.buildingId === "material_tray_extractor" ? "提取物资" : "缓存物品"}</span>
+          <ItemCatalogPicker value={itemId} items={acceptedItems} label={entity.buildingId === "material_tray_extractor" ? "选择托盘提取物资" : "选择缓存物品"} onChange={(nextItemId) => { if (nextItemId) onLogisticsItemChange(entity.id, nextItemId); }} />
         </div>
         {entity.kind === "splitter" ? (
           <div className="segmented-control" aria-label="分流模式">
@@ -1853,7 +1853,7 @@ function EntityInspector({
         ) : null}
         <dl className="metric-ledger">
           <div><dt>设备状态</dt><dd className={`status-text status-text--${status.tone}`}>{status.label}</dd></div>
-          <div><dt>输入缓存</dt><dd>{itemId ? formatQuantityCompact(entity.inputs[itemId] ?? 0) : "-"}</dd></div>
+          {entity.buildingId === "material_tray_extractor" ? <div><dt>行星托盘库存</dt><dd>{itemId ? formatQuantityCompact((entity.planetId === game.activePlanetId ? game.tray : game.planetTrays[entity.planetId] ?? {})[itemId] ?? 0) : "-"}</dd></div> : <div><dt>输入缓存</dt><dd>{itemId ? formatQuantityCompact(entity.inputs[itemId] ?? 0) : "-"}</dd></div>}
           <div><dt>可用库存</dt><dd>{itemId ? formatQuantityCompact(entity.outputs[itemId] ?? 0) : "-"}</dd></div>
           <div><dt>容量上限</dt><dd>{getEntityOutputCapacity(game, entity)}</dd></div>
         </dl>
@@ -2530,6 +2530,7 @@ export const CONSTRUCTION_BUILD_ORDER: Array<BuildingId | ConveyorBeltId> = [
   "conveyor_belt_mk3",
   "storage_mk1",
   "material_delivery_hub",
+  "material_tray_extractor",
   "orbital_cargo_terminal",
   "splitter_4way",
   "storage_tank",
@@ -2566,6 +2567,7 @@ export function constructionBuildIcon(id: BuildingId | ConveyorBeltId) {
   if (id === "matrix_lab") return <FlaskConical size={18} />;
   if (id === "storage_mk1") return <Database size={18} />;
   if (id === "material_delivery_hub") return <PackageOpen size={18} />;
+  if (id === "material_tray_extractor") return <PackageOpen size={18} />;
   if (id === "orbital_cargo_terminal") return <Satellite size={18} />;
   if (id === "storage_tank" || id === "oil_extractor" || id === "water_pump") return <Droplets size={18} />;
   if (id === "fractionator") return <Droplets size={18} />;

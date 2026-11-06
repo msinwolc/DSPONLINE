@@ -5229,6 +5229,92 @@ fn drain_material_delivery_hub_indices(
     Ok(())
 }
 
+/// Extract one configured material from each planet tray into the building's
+/// ordinary belt-facing output buffer.
+fn run_material_tray_extractors(
+    state: &CoreState,
+    base: &mut Map<String, Value>,
+    entities: &mut [Value],
+    seconds: f64,
+) -> anyhow::Result<Vec<usize>> {
+    let active_planet_id = base
+        .get("activePlanetId")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_owned();
+    let mut written = Vec::with_capacity(state.factory_topology.material_tray_extractor_indices.len());
+    for &entity_index in &state.factory_topology.material_tray_extractor_indices {
+        let Some(entity) = entities.get(entity_index).and_then(Value::as_object) else {
+            continue;
+        };
+        let Some(item_id) = string_at(entity, "storedItemId").map(str::to_owned) else {
+            continue;
+        };
+        let planet_id = string_at(entity, "planetId").unwrap_or_default().to_owned();
+        let building = state
+            .catalog
+            .buildings
+            .get("material_tray_extractor")
+            .ok_or_else(|| anyhow!("native tray extractor building definition is missing"))?;
+        let count = finite_number(entity.get("machineCount")).floor().max(1.0);
+        let capacity = (building.output_capacity.floor() * count).max(0.0);
+        let buffered = item_amount(entity, "outputs", &item_id).floor().max(0.0);
+        let progress = finite_number(entity.get("progress")).clamp(0.0, 1.0);
+        let is_active_planet = planet_id == active_planet_id;
+        let tray = if is_active_planet {
+            base.get_mut("tray")
+                .and_then(Value::as_object_mut)
+                .ok_or_else(|| anyhow!("native active tray is missing"))?
+        } else {
+            base.get_mut("planetTrays")
+                .and_then(Value::as_object_mut)
+                .ok_or_else(|| anyhow!("native planet trays are missing"))?
+                .entry(planet_id)
+                .or_insert_with(|| Value::Object(Map::new()))
+                .as_object_mut()
+                .ok_or_else(|| anyhow!("native planet tray is invalid"))?
+        };
+        let stock = finite_number(tray.get(&item_id)).floor().max(0.0);
+        let free_capacity = (capacity - buffered).max(0.0);
+        let can_work = stock >= 1.0 && free_capacity >= 1.0;
+        let work = if can_work {
+            progress + seconds.max(0.0) * building.speed.max(0.0) * count
+        } else {
+            0.0
+        };
+        let whole_work = (work + EPSILON).floor().max(0.0);
+        let amount = whole_work.min(stock).min(free_capacity);
+        if amount > 0.0 {
+            tray.insert(
+                item_id.clone(),
+                Value::from((stock - amount).max(0.0)),
+            );
+        }
+        let next_progress = if amount < whole_work {
+            0.0
+        } else {
+            (work - amount).max(0.0)
+        };
+        let entity = entity_object(&mut entities[entity_index])?;
+        if amount > 0.0 {
+            set_item_amount(entity, "outputs", &item_id, buffered + amount)?;
+        }
+        set_number(entity, "progress", next_progress)?;
+        set_number(entity, "utilization", if amount > 0.0 { 1.0 } else { 0.0 })?;
+        set_number(
+            entity,
+            "productionRate",
+            if seconds > EPSILON {
+                rounded(amount * 60.0 / seconds, 2)
+            } else {
+                0.0
+            },
+        )?;
+        written.push(entity_index);
+    }
+    Ok(written)
+}
+
 #[allow(clippy::too_many_arguments)]
 fn drain_material_delivery_hubs(
     state: &CoreState,
@@ -5746,6 +5832,9 @@ fn simulate_step(
         interstellar_peer_directory,
         std::sync::Arc::make_mut(interstellar_route_activity),
     );
+    let tray_extractor_rows =
+        run_material_tray_extractors(state, base, entities, seconds)?;
+    writer_events.record_rows(FactoryWriterDomain::Inventory, &tray_extractor_rows)?;
     let material_delivery_outcome = drain_material_delivery_hubs(
         state,
         base,

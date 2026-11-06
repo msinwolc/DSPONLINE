@@ -22381,6 +22381,7 @@ export function FactoryGame({ initialLoad, onReturnToMenu, onOpenReleaseNotes, o
           onRemoveSprayCoater: handleRemoveSprayCoater,
           onOpenResourceSettings: () => openMobileOperations("settings"),
           onMaterialDeliverySlotChange: updateMaterialDeliverySlot,
+          onLogisticsItemChange: (entityId, itemId) => commitGame((current) => setLogisticsItem(current, entityId, itemId)),
           onEjectorOrbitChange: (entityId, orbitId) => {
             commitGame((current) => setEjectorTargetOrbit(current, entityId, orbitId));
             setNotice("太阳帆目标轨道已更新");

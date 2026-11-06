@@ -1058,6 +1058,7 @@ const BUILT_IN_CONSTRUCTION_TARGETS: &[(&str, &str, &str)] = &[
     ("conveyor_belt_mk3", "传送带 Mk.III", "logistics"),
     ("storage_mk1", "小型储物仓", "logistics"),
     ("material_delivery_hub", "物资配送枢纽", "logistics"),
+    ("material_tray_extractor", "托盘取料器", "logistics"),
     ("orbital_cargo_terminal", "轨道货运终端", "logistics"),
     ("splitter_4way", "四向分流器", "logistics"),
     ("storage_tank", "储液罐", "logistics"),

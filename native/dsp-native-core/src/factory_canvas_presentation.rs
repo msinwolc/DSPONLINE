@@ -208,6 +208,9 @@ fn entity_item_ids(
         return Some(rows);
     }
     if matches!(kind, "storage" | "splitter" | "station") {
+        if !produced && building_id == Some("material_tray_extractor") {
+            return Some(rows);
+        }
         if !produced && building_id == Some("material_delivery_hub") {
             if let Some(slots) = entity.get("deliverySlots").and_then(Value::as_array) {
                 for slot in slots {

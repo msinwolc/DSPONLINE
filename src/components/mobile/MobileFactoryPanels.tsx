@@ -372,7 +372,7 @@ function MobileBeltLaneControl({ game, belt, onChange }: { game: GameState; belt
   </section>;
 }
 
-export function MobileInspectorSheet({ game, snap, entity, belt, selectedCount, readModel, onSnap, onClose, onOpenAdvanced, onFocus, onAddEntity, onRemoveEntity, onUpgradeEntity, onUpgradeInterstellarStation, onQuantumAttachment, onOrbitalCollectorQuantumMode, onUpgradeBelt, onBeltLaneCountChange, onEntityLockChange, onRemoveSprayCoater, onOpenResourceSettings, onMaterialDeliverySlotChange, onEjectorOrbitChange }: {
+export function MobileInspectorSheet({ game, snap, entity, belt, selectedCount, readModel, onSnap, onClose, onOpenAdvanced, onFocus, onAddEntity, onRemoveEntity, onUpgradeEntity, onUpgradeInterstellarStation, onQuantumAttachment, onOrbitalCollectorQuantumMode, onUpgradeBelt, onBeltLaneCountChange, onEntityLockChange, onRemoveSprayCoater, onOpenResourceSettings, onMaterialDeliverySlotChange, onLogisticsItemChange, onEjectorOrbitChange }: {
   game: GameState;
   snap: MobileSheetSnap;
   entity: FactoryEntity | null;
@@ -395,6 +395,7 @@ export function MobileInspectorSheet({ game, snap, entity, belt, selectedCount, 
   onRemoveSprayCoater: (entityId: string) => void;
   onOpenResourceSettings: () => void;
   onMaterialDeliverySlotChange: (entityId: string, slotIndex: number, mode: MaterialDeliverySlotMode, itemId: ItemId | null) => void;
+  onLogisticsItemChange?: (entityId: string, itemId: ItemId) => void;
   onEjectorOrbitChange: (entityId: string, orbitId: string) => void;
 }) {
   const [addCount, setAddCount] = useState(1);
@@ -421,6 +422,7 @@ export function MobileInspectorSheet({ game, snap, entity, belt, selectedCount, 
     const accepts = getBuilding(entity.buildingId!).accepts ?? "any";
     return accepts === "any" || accepts === item.kind || (accepts === "solid" && item.kind === "matrix");
   }) : [];
+  const trayExtractorItems = entity?.buildingId === "material_tray_extractor" ? Object.values(ITEMS) : [];
   const recipe = entity?.recipeId ? getRecipe(entity.recipeId) : undefined;
   const resourceReserve = entity ? getResourceReserveSnapshot(game, entity) : null;
   const ejectorTarget = entity?.buildingId === "em_rail_ejector" ? getEjectorOrbitTargetStatus(game, entity) : null;
@@ -478,6 +480,7 @@ export function MobileInspectorSheet({ game, snap, entity, belt, selectedCount, 
         {snap !== "peek" ? <>
           {entity ? <section className={`mobile-inspector-io${entity.buildingId === "storage_mk1" || entity.buildingId === "storage_tank" ? " mobile-inspector-io--storage" : ""}`}><div><header>输入</header>{inputRows.length ? inputRows.map(([itemId, amount]) => <span key={itemId}><ItemGlyph itemId={itemId} /><em>{getItem(itemId).name}</em><strong><QuantityValue value={amount} /></strong></span>) : <small>暂无输入缓存</small>}</div><div><header>输出</header>{outputRows.length ? outputRows.map(([itemId, amount]) => <span key={itemId}><ItemGlyph itemId={itemId} /><em>{getItem(itemId).name}</em><strong><QuantityValue value={amount} /></strong></span>) : <small>暂无输出缓存</small>}</div></section> : null}
           {entity?.buildingId === "material_delivery_hub" ? <section className="mobile-delivery-slot-controls" aria-label="物资配送接口设置"><header><span>三个直送接口</span><small>独立指定或自动识别</small></header>{deliverySlots.map((slot, index) => <article className={`mobile-delivery-slot mobile-delivery-slot--${slot.mode}`} key={index}><div><strong>接口 {index + 1}</strong><small>{slot.mode === "manual" ? "指定物资" : slot.mode === "disabled" ? "已清空" : slot.itemId ? "自动绑定" : "等待识别"}</small></div><ItemCatalogPicker value={slot.itemId ?? undefined} items={deliveryItems} label={`接口 ${index + 1} 指定物资`} onChange={(itemId) => { if (itemId) onMaterialDeliverySlotChange(entity.id, index, "manual", itemId); }} /><footer><button className={slot.mode === "auto" ? "active" : ""} type="button" onClick={() => onMaterialDeliverySlotChange(entity.id, index, "auto", null)}>自动识别</button><button className="danger" type="button" onClick={() => onMaterialDeliverySlotChange(entity.id, index, "disabled", null)}>清空接口</button></footer></article>)}</section> : null}
+          {entity?.buildingId === "material_tray_extractor" ? <section className="mobile-delivery-slot-controls" aria-label="托盘取料器设置"><header><span>提取物资</span><small>从 {getPlanet(entity.planetId).name}物资托盘取料</small></header><ItemCatalogPicker value={entity.storedItemId} items={trayExtractorItems} label="选择托盘提取物资" onChange={(itemId) => { if (itemId) onLogisticsItemChange?.(entity.id, itemId); }} /></section> : null}
           {belt ? <section className="mobile-belt-summary"><div><span>物品</span><strong>{getItem((displayBelt?.itemId ?? belt.itemId) as ItemId).name}</strong></div><div><span>近期吞吐</span><strong>{(displayBelt?.lastFlow ?? belt.lastFlow).toFixed(1)}/s</strong></div><div><span>堆叠</span><strong>×{displayBelt?.stackSize ?? belt.stackSize ?? 1}</strong></div><div><span>优先级</span><strong>{(displayBelt?.priority ?? belt.priority) === 2 ? "高" : (displayBelt?.priority ?? belt.priority) === 1 ? "标准" : "低"}</strong></div></section> : null}
           {belt ? <MobileBeltLaneControl game={game} belt={belt} onChange={onBeltLaneCountChange} /> : null}
           {entity ? <QuantityStepper value={addCount} max={addAvailable} disabled={addAvailable < 1} onChange={setAddCount} label="移动端增加设备" /> : null}

@@ -729,6 +729,7 @@ export function createInitialState(seed = DEFAULT_GALAXY_SEED, preserveBaseline 
       orbital_collector: 0,
       storage_mk1: 0,
       material_delivery_hub: 0,
+      material_tray_extractor: 0,
       storage_tank: 0,
       splitter_4way: 0,
       construction_center: 0,
@@ -2012,6 +2013,7 @@ export interface SimulationLookupContext {
   logisticsBufferEntities: FactoryEntity[];
   logisticsBufferRuntimes: IndexedLogisticsBufferRuntime[];
   materialDeliveryHubs: FactoryEntity[];
+  materialTrayExtractors: FactoryEntity[];
   /** Global-station upload endpoints; empty saves avoid a per-step entity scan. */
   orbitalCargoTerminals: FactoryEntity[];
   galacticExporters: FactoryEntity[];
@@ -2147,6 +2149,7 @@ export function createSimulationLookupContext(
     logisticsBufferEntities: [],
     logisticsBufferRuntimes: [],
     materialDeliveryHubs: [],
+    materialTrayExtractors: [],
     orbitalCargoTerminals: [],
     galacticExporters: [],
     timeWarpDevices: [],
@@ -2253,6 +2256,7 @@ export function createSimulationLookupContext(
       context.logisticsBufferEntities.push(entity);
     }
     if (entity.buildingId === "material_delivery_hub") context.materialDeliveryHubs.push(entity);
+    if (entity.buildingId === "material_tray_extractor") context.materialTrayExtractors.push(entity);
     if (entity.buildingId === "orbital_cargo_terminal") context.orbitalCargoTerminals.push(entity);
     if (entity.buildingId === "galactic_material_exporter") context.galacticExporters.push(entity);
     if (entity.buildingId === "time_warp_device") context.timeWarpDevices.push(entity);
@@ -4602,6 +4606,36 @@ function drainMaterialDeliveryHubs(state: GameState, seconds: number, lookup?: S
     entity.utilization = delivered > 0 ? 1 : 0;
     entity.productionRate = seconds > EPSILON ? round(delivered * 60 / seconds, 2) : 0;
     entity.progress = delivered > 0 ? 1 : 0;
+  }
+}
+
+/** Move configured stock from a planet tray into a belt-facing output buffer. */
+function runMaterialTrayExtractors(state: GameState, seconds: number, lookup?: SimulationLookupContext): void {
+  for (const entity of lookup?.materialTrayExtractors ?? state.entities) {
+    if (entity.buildingId !== "material_tray_extractor" || !entity.storedItemId) continue;
+    const itemId = entity.storedItemId;
+    const tray = trayForPlanet(state, entity.planetId);
+    const buffered = Math.max(0, Math.floor(entity.outputs[itemId] ?? 0));
+    const capacity = Math.max(0, Math.floor(getEntityOutputCapacity(state, entity)));
+    const trayStock = Math.max(0, Math.floor(tray[itemId] ?? 0));
+    const freeCapacity = Math.max(0, capacity - buffered);
+    const canWork = trayStock > 0 && freeCapacity > 0;
+    const work = canWork
+      ? Math.max(0, entity.progress ?? 0) + seconds * getBuilding(entity.buildingId).speed * entity.machineCount
+      : 0;
+    const wholeWork = Math.max(0, Math.floor(work + EPSILON));
+    const amount = Math.min(
+      wholeWork,
+      trayStock,
+      freeCapacity,
+    );
+    if (amount > 0) {
+      tray[itemId] = Math.floor((tray[itemId] ?? 0) - amount);
+      entity.outputs[itemId] = buffered + amount;
+    }
+    entity.utilization = amount > 0 ? 1 : 0;
+    entity.productionRate = seconds > EPSILON ? round(amount * 60 / seconds, 2) : 0;
+    entity.progress = amount < wholeWork ? 0 : Math.max(0, work - amount);
   }
 }
 
@@ -7311,6 +7345,7 @@ export function prepareSimulationStep(
   const beltStepReservation = reserveBeltStepOutputCapacity(state, lookup, contractExperiment?.skippedBeltIds, profiler);
   runOrbitalCollectors(state, seconds, beltStepReservation.outputCredits, lookup);
   subsystemStartedAt = profiler ? profileNow() : 0;
+  runMaterialTrayExtractors(state, seconds, lookup);
   drainMaterialDeliveryHubs(state, seconds, lookup);
   if (profiler) profiler.logisticsMs += profileNow() - subsystemStartedAt;
   subsystemStartedAt = profiler ? profileNow() : 0;
@@ -7628,6 +7663,7 @@ function simulateStep(
   );
   runOrbitalCollectors(state, seconds, beltStepReservation.outputCredits, lookup);
   subsystemStartedAt = profiler ? profileNow() : 0;
+  runMaterialTrayExtractors(state, seconds, lookup);
   drainMaterialDeliveryHubs(state, seconds, lookup);
   if (profiler) profiler.logisticsMs += profileNow() - subsystemStartedAt;
   subsystemStartedAt = profiler ? profileNow() : 0;
@@ -10530,6 +10566,7 @@ function logisticsAccepts(state: GameState, entity: FactoryEntity, itemId: ItemI
   if (entity.buildingId === "orbital_collector") {
     return (getPlanetOrbitalYields(state, entity.planetId)[itemId] ?? 0) > 0 && (!entity.storedItemId || entity.storedItemId === itemId);
   }
+  if (entity.buildingId === "material_tray_extractor") return false;
   if (entity.buildingId === "orbital_cargo_terminal") {
     return orbitalCargoTerminalAccepts(state, entity, itemId, targetPortIndex);
   }
@@ -13922,7 +13959,7 @@ export function setLogisticsItem(state: GameState, entityId: string, itemId: Ite
   if (current.kind === "station" && current.buildingId !== "orbital_collector") {
     return setStationSlotItem(state, entityId, 0, itemId);
   }
-  if (!logisticsAccepts(state, { ...current, storedItemId: undefined }, itemId)) return state;
+  if (current.buildingId !== "material_tray_extractor" && !logisticsAccepts(state, { ...current, storedItemId: undefined }, itemId)) return state;
   if (current.storedItemId === itemId) return state;
   const next = copyState(state);
   const entity = next.entities.find((candidate) => candidate.id === entityId)!;
@@ -16084,6 +16121,17 @@ export function getEntityOperatingStatus(state: GameState, entity: FactoryEntity
   }
 
   if (entity.kind === "storage" || entity.kind === "splitter") {
+    if (entity.buildingId === "material_tray_extractor") {
+      const itemId = entity.storedItemId;
+      if (!itemId) return { code: "unconfigured", label: "未选择提取物资", tone: "blocked" };
+      const amount = Math.max(0, Math.floor(trayForPlanet(state, entity.planetId)[itemId] ?? 0));
+      const buffered = Math.max(0, Math.floor(entity.outputs[itemId] ?? 0));
+      if (buffered >= getEntityOutputCapacity(state, entity)) return { code: "output-blocked", label: "输出缓存已满", tone: "blocked" };
+      if (amount < 1) return { code: "missing-input", label: `${ITEMS[itemId].name}托盘库存不足`, tone: "idle" };
+      return hasFlowingOutgoingBelt(state, entity.id, lookup)
+        ? { code: "running", label: `从托盘取出${ITEMS[itemId].name}`, tone: "running" }
+        : { code: "idle", label: "等待连接输出传送带", tone: "idle" };
+    }
     if (entity.buildingId === "material_delivery_hub") {
       const configured = getMaterialDeliveryItems(entity);
       if (configured.length === 0) return { code: "unconfigured", label: "等待连接输入线路", tone: "idle" };
@@ -16230,6 +16278,7 @@ export function getEntityOperatingStatus(state: GameState, entity: FactoryEntity
 }
 
 export function getAcceptedInputs(entity: FactoryEntity, state?: GameState): ItemId[] {
+  if (entity.buildingId === "material_tray_extractor") return [];
   if (entity.buildingId === "galactic_material_exporter") {
     return [...ACTIVITY_MATERIAL_IDS];
   }

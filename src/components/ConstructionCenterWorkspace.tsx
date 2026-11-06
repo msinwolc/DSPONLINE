@@ -13,7 +13,7 @@ import { WorkspaceFrame } from "./WorkspaceFrame";
 type CenterCategory = "all" | "power" | "production" | "logistics" | "dyson";
 
 const POWER_IDS = new Set<ConstructionId>(["wind_turbine", "solar_panel", "geothermal_power_station", "thermal_power_plant", "mini_fusion_power_plant", "artificial_star", "accumulator", "energy_exchanger"]);
-const LOGISTICS_IDS = new Set<ConstructionId>(["conveyor_belt_mk1", "conveyor_belt_mk2", "conveyor_belt_mk3", "storage_mk1", "material_delivery_hub", "orbital_cargo_terminal", "storage_tank", "splitter_4way", "planetary_logistics_station", "interstellar_logistics_station", "orbital_collector"]);
+const LOGISTICS_IDS = new Set<ConstructionId>(["conveyor_belt_mk1", "conveyor_belt_mk2", "conveyor_belt_mk3", "storage_mk1", "material_delivery_hub", "material_tray_extractor", "orbital_cargo_terminal", "storage_tank", "splitter_4way", "planetary_logistics_station", "interstellar_logistics_station", "orbital_collector"]);
 const DYSON_IDS = new Set<ConstructionId>(["em_rail_ejector", "ray_receiver", "vertical_launching_silo"]);
 
 interface AutomationDisplayDefinition {

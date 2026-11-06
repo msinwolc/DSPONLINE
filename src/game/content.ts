@@ -523,6 +523,11 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
     speed: 1, inputCapacity: 900, outputCapacity: 0, accepts: "any",
     description: "提供 3 个独立输入接口，送达的物品会立即进入所在行星的物资托盘。",
   },
+  material_tray_extractor: {
+    id: "material_tray_extractor", name: "托盘取料器", shortName: "托盘取料器", kind: "storage",
+    speed: 1, inputCapacity: 0, outputCapacity: 600, accepts: "any",
+    description: "选择一种物品后，从所在行星物资托盘按每秒 1 件取出并送上传送带；托盘库存不足或输出缓存已满时自动暂停。",
+  },
   orbital_cargo_terminal: {
     id: "orbital_cargo_terminal", name: "轨道货运终端", shortName: "轨道终端", kind: "storage",
     powerDemandKw: 50_000, speed: 1, inputCapacity: 1_000_000, outputCapacity: 0, accepts: "any", megastructure: true,
@@ -784,6 +789,7 @@ export const CONSTRUCTION: ConstructionDefinition[] = [
   { buildingId: "conveyor_belt_mk3", name: "传送带 Mk.III", outputAmount: 3, requiredTechId: "super_magnetic_logistics", costs: [{ itemId: "graphene", amount: 2 }, { itemId: "electromagnetic_turbine", amount: 2 }, { itemId: "super_magnetic_ring", amount: 1 }] },
   { buildingId: "storage_mk1", name: "小型储物仓", outputAmount: 1, requiredTechId: "basic_logistics", costs: [{ itemId: "iron_ingot", amount: 4 }, { itemId: "stone_brick", amount: 4 }] },
   { buildingId: "material_delivery_hub", name: "物资配送枢纽", outputAmount: 1, requiredTechId: "material_delivery_logistics", costs: [{ itemId: "steel", amount: 40 }, { itemId: "titanium_ingot", amount: 20 }, { itemId: "processor", amount: 10 }, { itemId: "electric_motor", amount: 10 }] },
+  { buildingId: "material_tray_extractor", name: "托盘取料器", outputAmount: 1, requiredTechId: "material_delivery_logistics", costs: [{ itemId: "steel", amount: 30 }, { itemId: "processor", amount: 8 }, { itemId: "electric_motor", amount: 8 }] },
   { buildingId: "orbital_cargo_terminal", name: "轨道货运终端", outputAmount: 1, requiredTechId: "universe_matrix", costs: [{ itemId: "titanium_alloy", amount: 500 }, { itemId: "frame_material", amount: 200 }, { itemId: "quantum_chip", amount: 200 }, { itemId: "processor", amount: 500 }] },
   { buildingId: "splitter_4way", name: "四向分流器", outputAmount: 1, requiredTechId: "basic_logistics", costs: [{ itemId: "iron_ingot", amount: 3 }, { itemId: "gear", amount: 2 }, { itemId: "circuit_board", amount: 1 }] },
   { buildingId: "storage_tank", name: "储液罐", outputAmount: 1, requiredTechId: "high_efficiency_plasma_control", costs: [{ itemId: "iron_ingot", amount: 8 }, { itemId: "stone_brick", amount: 4 }, { itemId: "glass", amount: 4 }] },
@@ -819,7 +825,7 @@ export type ConstructionCategory = "power" | "production" | "logistics" | "dyson
 const CORE_CONSTRUCTION_CATEGORY_IDS: Record<ConstructionCategory, ReadonlySet<ConstructionId>> = {
   power: new Set(["wind_turbine", "solar_panel", "geothermal_power_station", "thermal_power_plant", "mini_fusion_power_plant", "artificial_star", "accumulator", "energy_exchanger"]),
   production: new Set(["mining_machine", "arc_smelter", "plane_smelter", "assembling_machine_mk1", "assembling_machine_mk2", "assembling_machine_mk3", "spray_coater", "matrix_lab", "oil_extractor", "oil_refinery", "water_pump", "chemical_plant", "quantum_chemical_plant", "fractionator", "miniature_particle_collider", "construction_center"]),
-  logistics: new Set(["conveyor_belt_mk1", "conveyor_belt_mk2", "conveyor_belt_mk3", "storage_mk1", "material_delivery_hub", "orbital_cargo_terminal", "splitter_4way", "storage_tank", "planetary_logistics_station", "interstellar_logistics_station", "space_station_construction_launcher", "orbital_collector"]),
+  logistics: new Set(["conveyor_belt_mk1", "conveyor_belt_mk2", "conveyor_belt_mk3", "storage_mk1", "material_delivery_hub", "material_tray_extractor", "orbital_cargo_terminal", "splitter_4way", "storage_tank", "planetary_logistics_station", "interstellar_logistics_station", "space_station_construction_launcher", "orbital_collector"]),
   dyson: new Set(["em_rail_ejector", "vertical_launching_silo", "ray_receiver", "galactic_material_exporter", "micro_black_hole_connector", "time_warp_device"]),
 };
 
@@ -1009,7 +1015,7 @@ export const TECHNOLOGIES: Record<TechId, TechnologyDefinition> = {
     ],
     prerequisites: ["structure_matrix", "basic_logistics"],
     summary: "将三路传送带输入直接写入所在行星的物资托盘，减少重复搬运与仓储操作。",
-    unlocks: ["物资配送枢纽", "3 个自动匹配输入接口", "物资托盘直送"],
+    unlocks: ["物资配送枢纽", "托盘取料器", "3 个自动匹配输入接口", "物资托盘双向传送"],
   },
   proliferator_2: {
     id: "proliferator_2", name: "增产剂 Mk.II", tier: 8,
