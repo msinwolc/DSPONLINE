@@ -4672,6 +4672,14 @@ html[data-ui-font-scale="200"] .settings-group > header > small {
   gap: 8px;
 }
 
+.logistics-slot-row--tray-extractor {
+  grid-column: 1 / -1;
+}
+
+.logistics-slot-row--tray-extractor > .node-io__column--output {
+  grid-column: 2;
+}
+
 .storage-buffer-node {
   width: 288px;
 }

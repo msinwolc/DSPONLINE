@@ -3605,6 +3605,9 @@ fn target_consumes(
                     })
         }
         Some("storage" | "splitter") => {
+            if string_at(target, "buildingId") == Some("material_tray_extractor") {
+                return false;
+            }
             if string_at(target, "storedItemId") != Some(item_id) {
                 return false;
             }

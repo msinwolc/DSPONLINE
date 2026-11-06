@@ -256,6 +256,7 @@ export type BuildingId =
   | "orbital_collector"
   | "storage_mk1"
   | "material_delivery_hub"
+  | "material_tray_extractor"
   | "orbital_cargo_terminal"
   | "storage_tank"
   | "splitter_4way"

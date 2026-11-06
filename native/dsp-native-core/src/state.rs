@@ -2476,6 +2476,7 @@ pub(crate) struct FactoryTopology {
     pub time_warp_indices: Vec<usize>,
     pub logistics_buffer_indices: Vec<usize>,
     pub material_delivery_hub_indices: Vec<usize>,
+    pub material_tray_extractor_indices: Vec<usize>,
     pub orbital_cargo_terminal_indices: Vec<usize>,
     pub galactic_material_exporter_indices: Vec<usize>,
     pub space_station_launcher_indices: Vec<usize>,
@@ -2540,6 +2541,7 @@ impl FactoryTopology {
         self.time_warp_indices.shrink_to_fit();
         self.logistics_buffer_indices.shrink_to_fit();
         self.material_delivery_hub_indices.shrink_to_fit();
+        self.material_tray_extractor_indices.shrink_to_fit();
         self.orbital_cargo_terminal_indices.shrink_to_fit();
         self.galactic_material_exporter_indices.shrink_to_fit();
         self.space_station_launcher_indices.shrink_to_fit();
@@ -2571,6 +2573,7 @@ impl FactoryTopology {
             + self.time_warp_indices.capacity()
             + self.logistics_buffer_indices.capacity()
             + self.material_delivery_hub_indices.capacity()
+            + self.material_tray_extractor_indices.capacity()
             + self.orbital_cargo_terminal_indices.capacity()
             + self.galactic_material_exporter_indices.capacity()
             + self.space_station_launcher_indices.capacity()
@@ -4578,6 +4581,9 @@ impl CoreState {
             }
             if building == "material_delivery_hub" {
                 factory_topology.material_delivery_hub_indices.push(index);
+            }
+            if building == "material_tray_extractor" && kind == "storage" {
+                factory_topology.material_tray_extractor_indices.push(index);
             }
             if building == "orbital_cargo_terminal" {
                 factory_topology.orbital_cargo_terminal_indices.push(index);
