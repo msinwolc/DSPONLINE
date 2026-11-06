@@ -28,7 +28,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build:web
-      # Pushes to the feature branch deploy; PR runs only validate the build.
+      # Push deploys require all five DSP_PREVIEW_* secrets and sync the preview site.
       - name: Deploy preview over SSH
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         env:
