@@ -149,7 +149,7 @@
       "label": "轨道空间站操作",
       "occurrences": 1,
       "lines": [
-        24238
+        24239
       ],
       "kind": "durable",
       "owner": "rust",
@@ -175,7 +175,7 @@
         13506,
         18585,
         22301,
-        23550
+        23551
       ],
       "kind": "durable",
       "owner": "rust",
@@ -197,7 +197,7 @@
       "label": "建筑升级",
       "occurrences": 1,
       "lines": [
-        24498
+        24499
       ],
       "kind": "durable",
       "owner": "rust",
@@ -257,7 +257,7 @@
       "lines": [
         21488,
         22035,
-        23316
+        23317
       ],
       "kind": "durable",
       "owner": "rust",
@@ -301,7 +301,7 @@
       "label": "蓝图施工订单取消",
       "occurrences": 1,
       "lines": [
-        23675
+        23676
       ],
       "kind": "durable",
       "owner": "rust",
@@ -407,7 +407,7 @@
       "label": "微型黑洞启停",
       "occurrences": 1,
       "lines": [
-        23378
+        23379
       ],
       "kind": "durable",
       "owner": "rust",
@@ -429,7 +429,7 @@
       "label": "系统空间站输出口设置",
       "occurrences": 1,
       "lines": [
-        24215
+        24216
       ],
       "kind": "durable",
       "owner": "rust",
@@ -471,3 +471,4 @@
     }
   ]
 }
+
